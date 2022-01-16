@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $email
  * @property string $message
  */
-
 class Appeal extends Model
 {
     use HasFactory;
