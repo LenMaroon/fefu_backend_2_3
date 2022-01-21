@@ -40,39 +40,48 @@ class ChangesNewsSlug extends Command
      */
     public function handle()
     {
-        $oldSlug = $this->argument('old_slug');
-        $newSlug = $this->argument('new_slug');
+        $old_slug = $this->argument('old_slug');
+        $new_slug = $this->argument('new_slug');
 
-        if ($oldSlug === $newSlug)
+        $this->info($old_slug);
+        $this->info($new_slug);
+
+        if ($old_slug === $new_slug)
         {
-            $this->error('The slugs are equal');
+            $err ='$old_slug and $new_slug must be different.';
+
+            $this->error($err);
             return 1;
         }
 
-        $redirect = Redirect::query()
-            -> where('old_slug', route('news_item', ['slug' => $oldSlug], false))['path']
-            -> where('new_slug', route('news_item', ['slug' => $newSlug], false))['path']
+        $same_redir = Redirect::query()->where('old_slug', route('news_item', ['slug' => $old_slug], false))
+            ->where('new_slug', route('news_item', ['slug' => $new_slug], false))
             ->first();
-        if ($redirect !== null)
+
+        if($same_redir !== null)
         {
-            $this->error('The same request for redirect had already been made');
+            $err ='this redirect already exist.';
+
+            $this->error($err);
             return 1;
         }
 
-        $news = News::where('slug', $oldSlug)->first();
+        $news = News::query()->where('slug', $old_slug)->first();
         if ($news === null)
         {
-            $this->error("'The news wasn't found'");
+            $err ='news was not found by $old_slug.';
+
+            $this->error($err);
             return 1;
         }
 
-        DB::transaction(function() use ($news, $newSlug) {
-            Redirect::where('old_slug', route('news_item', ['slug' => $newSlug], false))['path']->delete();
-            $news->slug = $newSlug;
+        DB::transaction(function() use ($news, $new_slug)
+        {
+            Redirect::query()->where('old_slug', route('news_item', ['slug' => $new_slug], false))->delete();
+            $news->slug = $new_slug;
             $news->save();
         });
 
-        return 0;
-
+        return Command::SUCCESS;
     }
 }
